@@ -1,0 +1,11 @@
+\ProvidesFile{bluebookstyle.bbx}
+\RequireBibliographyStyle{verbose}
+
+\DeclareBibliographyDriver{case}{%
+  \usebibmacro{begentry}%
+  \printfield{title}\addcomma\space
+  \printfield{reporter}\space
+  \printfield{pages}\space
+  (\printfield{year})%
+  \usebibmacro{finentry}%
+}

@@ -1,0 +1,5 @@
+File	Scopo
+.cbx	Come appaiono le citazioni in nota
+.bbx	Come appaiono le citazioni in bibliografia (opzionale)
+.dbx	Dichiarazione di nuovi tipi (@case, @statute, ecc.) e nuovi campi
+.bib	Il tuo database, con nuove voci tipo @case, @memo, ecc.

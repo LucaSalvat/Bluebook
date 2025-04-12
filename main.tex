@@ -1,0 +1,22 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[
+  backend=biber,
+  style=bluebookstyle,
+  autocite=footnote
+]{biblatex}
+
+\addbibresource{bluebook.bib}
+
+\begin{document}
+
+This is cite with author 1:\cite{example1}
+This is cite with author 2:\cite{example2}
+This is cite with author 3:\cite{example3}
+
+this is an non periodical journal:\cite{example4}
+
+
+this is a newspaper article:\cite{example5}
+\end{document}
