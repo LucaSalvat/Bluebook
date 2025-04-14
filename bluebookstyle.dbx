@@ -1,11 +1,11 @@
 
-\DeclareDatamodelEntrytypes{journalarticlecons, journalarticleperiod}
+\DeclareDatamodelEntrytypes{journalarticlecons, journalarticleperiod.newspaperarticle,caseUS}
 
 \DeclareDatamodelFields[type=field, datatype=literal]{journalname}
 \DeclareDatamodelFields[type=field, datatype=integer]{pagebeg,days}
 \DeclareDatamodelFields[type=field, datatype=literal]{monthbeg, monthend, shortmonth,month}
 
-\DeclareDatamodelFields[type=field,datatype=literal]{reporter, publisher, number, jurisdiction, newspaper}
+\DeclareDatamodelFields[type=field,datatype=literal]{reporter, publisher, number, jurisdiction, newspaper, partya, partyb, reporter}
 
 
 \DeclareDatamodelEntryfields[journalarticlecons]{title, author, pagebeg, volume, journalname, pages, year, note}
@@ -13,3 +13,5 @@
 \DeclareDatamodelEntryfields[journalarticleperiod]{title, author, pagebeg, journalname, monthbeg, monthend, pages, year, note}
 
 \DeclareDatamodelEntryfields[newpaperarticle]{title, author, newspaper, month, days, year, pagebeg, note}
+
+\DeclareDatamodelEntryfields[caseUS]{partya, partyb, pagebeg, volume, reporter, pages, year, note}
