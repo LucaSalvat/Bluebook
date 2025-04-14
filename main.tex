@@ -1,5 +1,6 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
+\usepackage{etoolbox}
 \usepackage[english]{babel}
 \usepackage[
   backend=biber,
@@ -11,12 +12,37 @@
 
 \begin{document}
 
-This is cite with author 1:\cite{example1}
-This is cite with author 2:\cite{example2}
-This is cite with author 3:\cite{example3}
-
-this is an non periodical journal:\cite{example4}
+\section{Test on Typologies of the Input} 
+This is a newspaper article input:\bluecite[10000000000][][]{example5}
+This is a US case input:\bluecite{example6}
 
 
-this is a newspaper article:\cite{example5}
+\section{Prova con il numero di autori}
+
+This is cite with author 1:\bluecite{example1}
+This is cite with author 2:\bluecite{example2}
+This is cite with author 3:\bluecite{example3} 
+
+\newpage
+
+\section{Try of Supra and Id}
+
+
+
+this is a newspaper article:\bluecite{example5}
+
+
+this is a case exmaple:\bluecite[11]{example6}\\
+This should test the id efect\bluecite{example5}\bluecite[13]{example3}
+this is an non periodical journal:\bluecite[14]{example3}\bluecite[30]{example3}
+this shooul prove the supra effect:\bluecite{example6}
+
+\newpage
+This is to prove the supra in new page:\bluecite{example3}[10]
+
+
+
+\section{Test on page input}
+This is the test of on extra input:\bluecite[1'000'000]{example6}
+
 \end{document}
