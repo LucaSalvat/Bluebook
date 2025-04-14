@@ -2,27 +2,275 @@
 
 \ExecuteBibliographyOptions{maxnames=99}%it removes the et al
 
-\DeclareCiteCommand{\cite}[\mkbibfootnote]
-  {\usebibmacro{prenote}}
-  {\usebibmacro{bluebook:footcite}}
-  {\multicitedelim}
-  {\usebibmacro{postnote}}
+\RequirePackage{etoolbox}
+\RequirePackage{xparse}
+
+
+
+%_________________General Signals________________
+% \newbibmacro{See}{%
+% \textit{See.}\addspace
+% }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%                                   %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%    Workign Part(SUPRA)     %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%                                   %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Macro to store the first citation's page number {creo un comando robusto che memorizzi la pagina}
+%-----------------------------------------------------
+% \newrobustcmd{\storecitepage}[1]{%
+%     \ifcsundef{citepage:#1}{%
+%         \csxdef{citepage:#1}{\thepage}
+%     }{}
+% }
+%-----------------------------------------------------
+\newrobustcmd{\storecitefootnote}[1]{%
+  \ifcsundef{FootnoteNumber:#1}{%
+    \csxdef{FootnoteNumber:#1}{\thefootnote}% store first appear page and footnote 
+  }{}%
+}
+% -----------------------------------------------------
+% Macro to retrieve the page number of the first citation
+% \newrobustcmd{\getcitepage}[1]{%
+%   \ifcsundef{citepage:#1}{-ERROR: <uncited>} %Default if no page is recorded
+%   {\csuse{citepage:#1}}%
+% }
+%-----------------------------------------------------
+\newrobustcmd{\getcitefootnote}[1]{%
+  \ifcsundef{FootnoteNumber:#1}{ERROR: not previously defined} %Default if no footnote is recorded
+  {\csuse{FootnoteNumber:#1}}%
+}
+%-----------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%                                    %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%     Blocco Principale Supra-Id     %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%                                    %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \newbibmacro*{PageMng}[1]{\ifblank{#1}{000000000000}{, at \printfield{pages}}}
+
+% \newbibmacro*{PageMng}[1]{\ifblank{#1}{000000000000}{, at #1}}
+% %UTILIZZO : \PageMng{oggetto}
+
+
+%check of the Id or Supra
+\newtoggle{Id}
+
+\newbibmacro*{CitationPointer}{%Verifica le la voce è stata già processata in qualche modo e trova la pagina
+    \iffieldundef{pages}{}{\usebibmacro{CheckId}
+    \ifboolexpr{test {\iftoggle{Id}}}{%
+    \emph{Id.}~\usebibmacro{PageToPass} % Citation is the same
+  }{%
+\usebibmacro{supra} % Citation is new
+  }%
+    %\usebibmacro{supra} al posto della parte sotto
+    % \ifboolexpr{%
+    %     test{\ifcsdef{FootnoteNumber:\thefield{entrykey}}}%
+    %     }
+    %     {%
+    %         \usebibmacro{bluebook:Names}~\emph{Supra} note~\getcitefootnote{\thefield{entrykey}} 
+    %         \iffieldundef{pages}{}{\usebibmacro{PageToPass}}%{\thefield{pages}}
+    %     }
+    %     {%
+    %         \usebibmacro{bluebook:footcite}%
+    %     }
+    }
+    %\storecitepage{\thefield{entrykey}}%
+    \storecitefootnote{\thefield{entrykey}}%
+    \updatecitationinfo%
+}
+
+\newbibmacro{supra}{
+\ifboolexpr{%
+        test{\ifcsdef{FootnoteNumber:\thefield{entrykey}}}%
+        }
+        {%
+            \usebibmacro{bluebook:Names}\emph{Supra} note~\getcitefootnote{\thefield{entrykey}} 
+            \iffieldundef{pages}{}{\usebibmacro{PageToPass}}%{\thefield{pages}}
+        }
+        {%
+            \usebibmacro{bluebook:footcite}%
+        }
+}
+
+%Più veloce sarebbe stato gestire i nomi con Authorcount, tuttavia creava dei problemi con gli US Cases !!
+\newbibmacro*{bluebook:Names}{%Macro per la gestione dei nomi nei Id & Supra 
+  \ifentrytype{journalarticlecons}
+    {\usebibmacro{authorcount}}
+    {\ifentrytype{journalarticleperiod}{\usebibmacro{authorcount}}%
+        {\ifentrytype{newspaperarticle}
+        {\usebibmacro{authorcount}}
+        {\ifentrytype{caseUS}{%
+        \usebibmacro{caseusauthors}}
+        {}}}% fallback for any other entry types (do nothing)
+    }
+}
+
+%\iffieldundef{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%L'Id 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Define variables to store last citation (L.C.) information_______
+\newcounter{LCfootnote}  % To store the last citation's footnote number
+\newcounter{LCpage}      % To store the last citation's page number
+\newcommand{\LCkey}{}    % To store the last citation's entry key
+
+% Macro to update citation information_________________________
+\newcommand{\updatecitationinfo}{%
+  \global\setcounter{LCfootnote}{\thefootnote}  % Store last citation's footnote number
+  \global\setcounter{LCpage}{\thepage}              % Store last citation's page number
+  \global\edef\LCkey{\thefield{entrykey}}            % Store the last citation's entry key
+}
+
+% \newbibmacro*{CheckId}{
+%     \ifboolexpr{ test {LCfootnote + 1 == \thefootnote} and test{LCpage = \thepage} and test {LCkey = thefield{entrykey}} }{true}{false}
+% }
+
+% \newbibmacro*{CheckId}{
+%     \ifboolexpr{    test {LCfootnote + 1 == \thefootnote}%
+%                 and test {LCkey = thefield{entrykey}%
+%                 }%
+%     }%
+%     {\toggletrue{Id}}%
+%     {\togglefalse{Id}}%
+% }
+
+% \newbibmacro*{CheckId}{%
+%   % Store current footnote number and entry key
+%   \edef\tempfoot{\thefootnote} % Store current footnote number
+%   \edef\tempkey{\thefield{entrykey}} % Store current entry key
+
+%   % Increment LCfootnote and store in a temporary counter
+%   \setcounter{tempfootnum}{LCfootnote} % Store current LCfootnote in a temporary counter
+%   \addtocounter{tempfootnum}{1} % Increment the counter by 1
+
+%   % Use \ifboolexpr to check if both conditions are true:
+%   \ifboolexpr{
+%     test {\value{tempfootnum}=\thefootnote} % Compare incremented LCfootnote with current footnote number
+%     and test {\ifstrequal{\LCkey}{\tempkey}} % Compare the entry keys
+%   }{%
+%     \toggletrue{Id} % If both conditions are true, set toggle to true
+%   }{%
+%     \togglefalse{Id} % If any condition is false, set toggle to false
+%   }
+% }
+\newcounter{tempfootnum}
+\newbibmacro*{CheckId}{%
+  \edef\tempfoot{\thefootnote}%
+  \edef\tempkey{\thefield{entrykey}}%
+  \setcounter{tempfootnum}{\value{LCfootnote}}%
+  \addtocounter{tempfootnum}{1}%
+  \ifnumequal{\value{tempfootnum}}{\thefootnote}{%
+  \ifx\LCkey\tempkey%
+      \toggletrue{Id}%
+    \else%
+      \togglefalse{Id}%
+    \fi}%
+    {\togglefalse{Id}}%
+}
+
+
+
+% Check if the citation is the same page or not
+% \newbibmacro*{checksupra}{%
+%   \ifx\lastcitekey\thefield{entrykey}  % Check if the current citation is the same as the previous one
+%     \ifnum\value{footnote}=\value{lastcitefootnote}  % If on the same page and same footnote
+%       \printtext{ \emph{supra} \thefootnote}  % Supra with footnote number
+%     \else  % If it's a different page
+%       \printtext{ \emph{supra} \thefootnote, page \thepage}  % Supra with footnote and page
+%     \fi
+%   \else  % If it's a different citation entirely
+%     \usebibmacro{bluebook:footcite}                %-----------------------[Modificato]-----
+%     %\usebibmacro{footcite}  % Print the full citation
+%     \updatecitationinfo  % Update the citation information
+%   \fi
+% }
+
+
+
+   
+ 
+
+%Questo crea un nuovo comando che permette di avere 3 argoementi
+\NewDocumentCommand{\bluecite}{o O{} O{} m}{%
+  \IfNoValueTF{#1}{}{\def\mytemppagecite{#1}} %definisce la variabile mytemppage se esiste l'entry
+  \def\mypre{#3}
+  \def\mypost{#2}
+  \tempcite[\mypre][\mypost]{#4}%
+  \ifdef{\mytemppagecite}% Cancella la variabile creata prima
+    {\undef\mytemppagecite}
+    {}%
+}
+
+\DeclareCiteCommand{\tempcite}[\mkbibfootnote]
+{\usebibmacro{prenote}}
+{\usebibmacro{CitationPointer}}
+{\multicitedelim}
+{\usebibmacro{postnote}}
+% Optional text after citation. Can be used like \cite[#comment]{#entrykey}
+\newbibmacro{PageToPass}{% Crea il comand con l'at se la pagina è stat inserita
+  \ifdef{\mytemppagecite} %Here must be add the entrytype for the constitution that changes 
+    {at~\mytemppagecite.}
+    {}% 
+}
+
+%%%------------ Posso provare a passare le pagine definendo un bibmacro postnote che prende in input la post note!!!
+
+% \DeclareFieldFormat{CitePage}{#1}
+% \DeclareNameFormat{}{}
+% \DeclareCiteCommand[]{}
+
+% \iffieldundef{postnote}{}
+% \iffie
+
+% \setfield{pages}{5}
+
+
+
+
+% \newbibmacro*{PageMng}{%
+%   \ifdefined\mytemppagecite
+%     {, at \mytemppagecite}
+%     {ERROR 404}%
+% }
+
+%% 404 Not Defined Variable
+
+% \newrobustcmd{\PassPageCite}[1]{%
+%     \setfield{pages}{#1}%
+%     %\usebibmacro{CitationPointer}
+% }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%                          %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%      DA NON TOCCARE      %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%                          %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%OSS: Il 40% di quello che sta qua sotto potrebbe essere implementata meglio !!!!!!!!
+
+
+%___________________________________
 
 \DeclareFieldFormat{volumenovol}{#1} %Aux to the novolume
 \DeclareFieldFormat{pagesnopp}{#1}
 
-
-
+%New Volume citation Style
 \newbibmacro{volumenovol}{% Volume without the Vol. before
-  \iffootnote
-    {%
-      \iffieldundef{volume}
-        {}
-        {\printfield[volumenovol]{volume}}%
+  \iffootnote{%
+      \iffieldundef{volume}{}{\printfield[volumenovol]{volume}}%
     }
     {}%
 }
 
+%New pages citation Style
 \newbibmacro{pagesnopp}{% pages without the Vol. before
   \iffootnote
     {%
@@ -33,13 +281,17 @@
     {}%
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%      Gestione Multi-autore      %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \DeclareNameFormat{singleauthor}{%
   \namepartfamily%
   \ifdefvoid{\namepartprefix}{}{\addspace\namepartprefix\addspace}% 
   \ifdefvoid{\namepartgiven}{}{\addspace\namepartgiven}%
   \ifdefvoid{\namepartsuffix}{}{\addspace\namepartsuffix}%
+  ,%
 }
-
 \DeclareNameFormat{firstauthoronly}{% in case of more than 3 authros output only the first
   \ifthenelse{\value{listcount}=1}{%
     % Print the first (and only the first) author: family name plus given name if available.
@@ -47,10 +299,8 @@
     \ifdefvoid{\namepartprefix}{}{\addspace\namepartprefix\addspace}%
     \ifdefvoid{\namepartgiven}{}{\addspace\namepartgiven}%
     \ifdefvoid{\namepartsuffix}{}{\addspace\namepartsuffix}%
-  }{}%
+    }{}%
 }
-
-
 \DeclareNameFormat{twoplus}{% for exactly two authors
   \ifthenelse{\value{listcount}=1}{%
     % For the first author, print the family name and given name.
@@ -70,21 +320,19 @@
   }%
 }
 
-
-%%%%%%%%%%%%%%%%%% Jounral Consecutive style   %%%%%%%%%%%%%%%%%%
 \newbibmacro*{authorcount}{%
   \ifnum\value{author}=1
     \printnames[singleauthor]{author}\addcomma
   \else\ifnum\value{author}=2
       \printnames[twoplus]{author}\addcomma
   \else
-    \printnames[firstauthoronly]{author} \emph{et al.,}
+    \printnames[firstauthoronly]{author}~\emph{et al.,}
   \fi\fi
 }
 
-
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%    Jounral Consecutive style    %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \newbibmacro*{shortmonth}{
   \iffieldequalstr{month}{January}{\def\temp{Jan}}%
@@ -100,7 +348,6 @@
   \iffieldequalstr{month}{November}{\def\temp{Nov}}%
   \iffieldequalstr{month}{December}{\def\temp{Dec}}%
 }
-
 \newbibmacro*{simplifiedmonthend}{%
   \iffieldundef{monthend}{}% If the month field is not defined, do nothing
   {\ifthenelse{\equal{\thefield{monthend}}{January}}{Jan.}{}%
@@ -135,13 +382,17 @@
 }
 
 
+\newbibmacro{caseusauthors}{%
+\printfield{partya} v. \printfield{partyb}\addcomma%
+}
+
 %––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-% Custom macro for journalarticlecons
+% Custom macro for journalarticlecons 
 \newbibmacro*{bluebook:footcite}{%
   \ifentrytype{journalarticlecons}
     {%
       \usebibmacro{authorcount}\space% Author(s)
-      \printfield[emph]{title}\addcomma\space% Italic title
+      \printfield{title}\addcomma\space% Italic title
       \usebibmacro{volumenovol}\space% Volume without "vol."
       \printfield[smallcaps]{journalname}\addcomma\space% Journal name in small caps
       \printfield{pagebeg} \space%
@@ -155,25 +406,36 @@
       \ifentrytype{journalarticleperiod}
         {%
           \usebibmacro{authorcount}\addcomma\space
-          \printfield[emph]{title}\addcomma\space
+          \printfield{title}
           \printfield[smallcaps]{journalname}\addcomma \space
           \iffieldundef{monthend}{\usebibmacro{simplifiedmonthbeg}}{\usebibmacro{simplifiedmonthbeg}-\usebibmacro{simplifiedmonthend}}
           \printfield{year} \addcomma \space
           at \printfield{pagebeg}\addcomma \space 
-          \usebibmacro{pagesnopp}%
+          \usebibmacro{pagesnopp}.
         }%
         {
         \ifentrytype{newspaperarticle}
         {%
         \usebibmacro{authorcount},\addspace
-        \printfield[emph]{title}\addcomma\space
+        \printfield{title}
         \printfield[smallcaps]{newspaper}\addcomma\space
         \printfield[shortmonth]{month}\space
         \printfield{days}\addcomma\space
         \printfield{year}\addcomma\space
-        at \printfield{pagebeg}
+        at \printfield{pagebeg}.
+        }
+        {
+        \ifentrytype{caseUS}
+        {%
+        \usebibmacro{caseusauthors} %this are the names of the parties
+        \usebibmacro{volumenovol}\addspace
+        \printfield{reporter}\addspace
+        \printfield{pagebeg}\addcomma\addspace
+        \usebibmacro{pagesnopp}
+        (\printfield{year}).
         }
         {}
+        }
         }% fallback for any other entry types (do nothing)
     }
 }
